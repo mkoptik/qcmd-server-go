@@ -1,0 +1,6 @@
+package: github.com/mkoptik/qcmd-server-go
+import:
+- package: github.com/blevesearch/bleve
+  version: v0.7.0
+- package: github.com/src-d/go-git
+  version: ^4.2.0
