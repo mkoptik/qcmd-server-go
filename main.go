@@ -3,6 +3,8 @@ package main
 import (
 	//"github.com/blevesearch/bleve"
 	//"log"
+	"path/filepath"
+	"log"
 )
 
 type Config struct {
@@ -48,6 +50,12 @@ func main() {
 
 	log.Print("Finished")*/
 
-	updateGitRepository("https://github.com/mkoptik/qcmd-commands", "./data/qcmd-commands")
+	path := "./data/qcmd-commands"
 
+	//updateGitRepository("https://github.com/mkoptik/qcmd-commands", path)
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	readMarkdownFilesInPath(absPath, []string{})
 }

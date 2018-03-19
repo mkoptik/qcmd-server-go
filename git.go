@@ -7,6 +7,8 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	)
 
+// Checks if destination directory exists. If yes, it pulls repository
+// from origin and if directory does not exist, it will be cloned.
 func updateGitRepository(repositoryUrl string, cloneDirectory string) {
 
 	path, err := filepath.Abs(cloneDirectory)
