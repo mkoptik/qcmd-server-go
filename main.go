@@ -57,5 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	readMarkdownFilesInPath(absPath, []string{})
+	commands := readMarkdownFilesInPath(absPath, []string{})
+	_ = commands
+
 }
