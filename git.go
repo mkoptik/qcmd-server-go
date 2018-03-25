@@ -40,14 +40,16 @@ func updateGitRepository(repositoryUrl string, cloneDirectory string) {
 		}
 
 		log.Printf("Git pull from origin")
-		err = workTree.Pull(&git.PullOptions{
+
+		pullOptions := &git.PullOptions{
 			Progress: os.Stdout,
 			RemoteName: "origin",
-		})
+		}
 
-		if err != nil {
+		if err := workTree.Pull(pullOptions); err != nil && err != git.NoErrAlreadyUpToDate {
 			log.Fatal(err)
 		}
+
 	}
 
 
