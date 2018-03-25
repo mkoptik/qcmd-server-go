@@ -1,10 +1,11 @@
 package main
 
 import (
-	//"github.com/blevesearch/bleve"
-	//"log"
+	"github.com/blevesearch/bleve"
 	"path/filepath"
 	"log"
+	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -19,45 +20,42 @@ type Command struct {
 	Tags []string
 }
 
+var bleveIndex bleve.Index = nil
+
 func main() {
 
-	/*command1 := Command{
-		Id: "id1",
-	 	Label: "label1",
-	 	CommandText: "command text 1",
-	 	Description: "description1",
-	 	Tags: []string{"tag1", "tag2"},
-	}
+	mdFilesPath := "./data/qcmd-commands"
+	indexPath := "/home/mkoptik/.qcmd/index.bleve"
 
-	command2 := Command{
-		Id: "id2",
-		Label: "label2",
-		CommandText: "command text 2",
-		Description: "description1",
-		Tags: []string{"tag1", "tag2"},
-	}
-
-	mapping := bleve.NewIndexMapping()
-	index, err := bleve.New("/home/mkoptik/.qcmd/index.bleve", mapping)
-	if err != nil {
-		log.Fatal("Error creating bleve index", err)
-	}
-
-	index.Index("doc1", command1)
-	index.Index("doc2", command2)
-
-	index.Close()
-
-	log.Print("Finished")*/
-
-	path := "./data/qcmd-commands"
-
-	//updateGitRepository("https://github.com/mkoptik/qcmd-commands", path)
-	absPath, err := filepath.Abs(path)
+	//updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
+	absPath, err := filepath.Abs(mdFilesPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	commands := readMarkdownFilesInPath(absPath, []string{})
-	_ = commands
+
+	if _, err := os.Stat(indexPath); err == nil {
+		err = os.RemoveAll(indexPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	mapping := bleve.NewIndexMapping()
+	index, err := bleve.New(indexPath, mapping)
+	if err != nil {
+		log.Fatal("Error creating bleve index", err)
+	}
+
+	log.Printf("Indexing %d commands into %s", len(commands), indexPath)
+	for i, command := range commands {
+		index.Index(strconv.Itoa(i), command)
+	}
+
+	bleveIndex = index
+	StartHttpServer()
+
+	log.Printf("Closing bleve index")
+	index.Close()
 
 }
