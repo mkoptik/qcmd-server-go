@@ -6,7 +6,7 @@ import (
 	"strings"
 	"path"
 	"fmt"
-	"github.com/russross/blackfriday"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 func readMarkdownFilesInPath(absDirPath string, tags []string) []*Command {
