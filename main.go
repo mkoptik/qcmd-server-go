@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"log"
 	"os"
+	"os/user"
 	"strconv"
 )
 
@@ -24,10 +25,12 @@ var bleveIndex bleve.Index = nil
 
 func main() {
 
-	mdFilesPath := "./data/qcmd-commands"
-	indexPath := "/home/mkoptik/.qcmd/index.bleve"
+	currentUser, _ := user.Current()
 
-	//updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
+	mdFilesPath := filepath.Join(currentUser.HomeDir, ".qcmd/commands")
+	indexPath := filepath.Join(currentUser.HomeDir, ".qcmd/index.bleve")
+
+	updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
 	absPath, err := filepath.Abs(mdFilesPath)
 	if err != nil {
 		log.Fatal(err)

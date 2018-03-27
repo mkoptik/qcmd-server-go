@@ -39,5 +39,6 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 func StartHttpServer() {
 	http.HandleFunc("/search", searchHandler)
+	log.Printf("Starting http server on port 8888")
 	log.Fatal(http.ListenAndServe(":8888", nil))
 }
