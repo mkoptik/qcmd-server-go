@@ -8,12 +8,20 @@ multiple repositories for server, client and commands list.
 Server side part written in Golang is REST API provider using full text search to get a commands. For the full text
 search is used bleve package, offering no dependency to external service.
 
-### Start in docker
+Index is stored in ~/.qcmd/... directory
 
-All changes must be pushed to git repository in order to correctly run this package in docker
+### Run in docker
+
+Build docker image
 
 ```
-docker run golang go get -v github.com/mkoptik/qcmd-server-go
+docker build -t mkoptik/qcmd-server-go .
+```
+
+Start docker container
+
+```
+docker run -p 8888:8888 mkoptik/qcmd-server-go
 ```
 
 ### REST API endpoints
