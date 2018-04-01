@@ -44,8 +44,17 @@ func main() {
 		}
 	}
 
-	mapping := bleve.NewIndexMapping()
-	index, err := bleve.New(indexPath, mapping)
+	enTextFieldMapping := bleve.NewTextFieldMapping()
+	enTextFieldMapping.Analyzer = "en"
+
+	documentMapping := bleve.NewDocumentMapping()
+	documentMapping.AddFieldMappingsAt("label", enTextFieldMapping)
+	documentMapping.AddFieldMappingsAt("description", enTextFieldMapping)
+
+	indexMapping := bleve.NewIndexMapping()
+	indexMapping.AddDocumentMapping("command", documentMapping)
+
+	index, err := bleve.New(indexPath, indexMapping)
 	if err != nil {
 		log.Fatal("Error creating bleve index", err)
 	}

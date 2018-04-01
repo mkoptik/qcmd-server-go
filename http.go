@@ -12,6 +12,8 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	searchString := r.URL.Query().Get("search")
 
 	query := bleve.NewMatchQuery(searchString)
+	query.Analyzer = "en"
+
 	request := bleve.NewSearchRequest(query)
 	request.Fields = []string { "Label", "CommandText", "Description" }
 
