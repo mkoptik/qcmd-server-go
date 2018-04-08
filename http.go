@@ -15,7 +15,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	query.Analyzer = "en"
 
 	request := bleve.NewSearchRequest(query)
-	request.Fields = []string { "Label", "CommandText", "Description" }
+	request.Fields = []string { "label", "commandText", "description" }
 
 	searchResult, err := bleveIndex.Search(request)
 	if err != nil {
@@ -27,11 +27,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	foundCommands := make([]Command, searchResult.Hits.Len())
 	for i, hit := range searchResult.Hits {
 		foundCommands[i] = Command{
-			Label: hit.Fields["Label"].(string),
-			CommandText: hit.Fields["CommandText"].(string),
+			Label: hit.Fields["label"].(string),
+			CommandText: hit.Fields["commandText"].(string),
 		}
-		if hit.Fields["Description"] != nil {
-			foundCommands[i].Description = hit.Fields["Description"].(string)
+		if hit.Fields["description"] != nil {
+			foundCommands[i].Description = hit.Fields["description"].(string)
 		}
 	}
 

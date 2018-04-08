@@ -14,11 +14,11 @@ type Config struct {
 }
 
 type Command struct {
-	Id string
-	Label string
-	Description string
-	CommandText string
-	Tags []string
+	Id string `json:"id"`
+	Label string `json:"label"`
+	Description string `json:"description"`
+	CommandText string `json:"commandText"`
+	Tags []string `json:"tags"`
 }
 
 var bleveIndex bleve.Index = nil
