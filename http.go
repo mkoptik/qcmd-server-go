@@ -8,13 +8,29 @@ import (
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-
 	searchString := r.URL.Query().Get("search")
 
-	query := bleve.NewMatchQuery(searchString)
-	query.Analyzer = "en"
+	termsQuery := bleve.NewDisjunctionQuery()
 
-	request := bleve.NewSearchRequest(query)
+	tokens := bleveIndex.Mapping().AnalyzerNamed("standard").Analyze([]byte(searchString))
+	for _, token := range tokens {
+		tokenTerm := string(token.Term)
+		fieldsQuery := bleve.NewDisjunctionQuery()
+
+		prefixQuery := bleve.NewPrefixQuery(tokenTerm)
+		prefixQuery.SetField("label")
+		prefixQuery.SetBoost(4)
+		fieldsQuery.AddQuery(prefixQuery)
+
+		prefixQuery = bleve.NewPrefixQuery(tokenTerm)
+		prefixQuery.SetField("description")
+		prefixQuery.SetBoost(2)
+		fieldsQuery.AddQuery(prefixQuery)
+
+		termsQuery.AddQuery(fieldsQuery)
+	}
+
+	request := bleve.NewSearchRequest(termsQuery)
 	request.Fields = []string { "label", "commandText", "description" }
 
 	searchResult, err := bleveIndex.Search(request)
