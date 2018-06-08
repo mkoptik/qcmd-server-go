@@ -50,6 +50,7 @@ func main() {
 	documentMapping := bleve.NewDocumentMapping()
 	documentMapping.AddFieldMappingsAt("label", enTextFieldMapping)
 	documentMapping.AddFieldMappingsAt("description", enTextFieldMapping)
+	documentMapping.AddFieldMappingsAt("tags", enTextFieldMapping)
 
 	indexMapping := bleve.NewIndexMapping()
 	indexMapping.AddDocumentMapping("command", documentMapping)

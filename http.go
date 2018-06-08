@@ -31,7 +31,8 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := bleve.NewSearchRequest(termsQuery)
-	request.Fields = []string { "label", "commandText", "description" }
+	request.Fields = []string { "label", "commandText", "description", "tags" }
+	request.Size = 500
 
 	searchResult, err := bleveIndex.Search(request)
 	if err != nil {
@@ -48,6 +49,18 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if hit.Fields["description"] != nil {
 			foundCommands[i].Description = hit.Fields["description"].(string)
+		}
+
+		// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
+		tagsString, ok := hit.Fields["tags"].(string)
+		if ok {
+			foundCommands[i].Tags = []string {tagsString}
+		} else {
+			tags := make([]string, len(hit.Fields["tags"].([]interface{})))
+			for i2, tagObj := range hit.Fields["tags"].([]interface{}) {
+				tags[i2] = tagObj.(string)
+			}
+			foundCommands[i].Tags = tags
 		}
 	}
 
