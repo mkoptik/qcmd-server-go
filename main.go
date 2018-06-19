@@ -18,24 +18,46 @@ type Command struct {
 	Label string `json:"label"`
 	Description string `json:"description"`
 	CommandText string `json:"commandText"`
+	Executive string `json:"executive"`
 	Tags []string `json:"tags"`
 }
 
-var bleveIndex bleve.Index = nil
+type Tag struct {
+	Path []string `json:"path"`
+}
+
+var commandsIndex bleve.Index = nil
+var tagsIndex bleve.Index = nil
 
 func main() {
 
 	currentUser, _ := user.Current()
 
 	mdFilesPath := filepath.Join(currentUser.HomeDir, ".qcmd/commands")
-	indexPath := filepath.Join(currentUser.HomeDir, ".qcmd/index.bleve")
+	commandsIndexPath := filepath.Join(currentUser.HomeDir, ".qcmd/commands.index.bleve")
+	tagsIndexPath := filepath.Join(currentUser.HomeDir, ".qcmd/tags.index.bleve")
 
 	updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
 	absPath, err := filepath.Abs(mdFilesPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	commands := readMarkdownFilesInPath(absPath, []string{})
+
+	commands, tags := readMarkdownFilesInPath(absPath, []string{}, [][]string{})
+
+	indexCommands(commandsIndexPath, commands)
+	defer commandsIndex.Close()
+
+	indexTags(tagsIndexPath, tags)
+	defer tagsIndex.Close()
+
+	StartHttpServer()
+
+	log.Printf("Closing bleve index")
+
+}
+
+func indexCommands(indexPath string, commands []*Command) {
 
 	if _, err := os.Stat(indexPath); err == nil {
 		err = os.RemoveAll(indexPath)
@@ -57,7 +79,7 @@ func main() {
 
 	index, err := bleve.New(indexPath, indexMapping)
 	if err != nil {
-		log.Fatal("Error creating bleve index", err)
+		log.Fatal("Error creating bleve index for commands", err)
 	}
 
 	log.Printf("Indexing %d commands into %s", len(commands), indexPath)
@@ -65,10 +87,33 @@ func main() {
 		index.Index(strconv.Itoa(i), command)
 	}
 
-	bleveIndex = index
-	StartHttpServer()
+	commandsIndex = index
 
-	log.Printf("Closing bleve index")
-	index.Close()
+}
 
+func indexTags(indexPath string, uniqueTags [][]string) {
+
+	if _, err := os.Stat(indexPath); err == nil {
+		err = os.RemoveAll(indexPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	indexMapping := bleve.NewIndexMapping()
+
+	index, err := bleve.New(indexPath, indexMapping)
+	if err != nil {
+		log.Fatal("Error creating bleve index for tags", err)
+	}
+
+	log.Printf("Indexing %d tas into %s", len(uniqueTags), indexPath)
+	for i, tag := range uniqueTags {
+		tagObj := Tag{
+			Path: tag,
+		}
+		index.Index(strconv.Itoa(i), tagObj)
+	}
+
+	tagsIndex = index
 }

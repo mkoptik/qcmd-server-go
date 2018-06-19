@@ -7,9 +7,10 @@ import (
 	"path"
 	"fmt"
 	"gopkg.in/russross/blackfriday.v2"
+	"reflect"
 )
 
-func readMarkdownFilesInPath(absDirPath string, tags []string) []*Command {
+func readMarkdownFilesInPath(absDirPath string, tagsStack []string, uniqueTags [][]string) ([]*Command, [][]string) {
 	if !path.IsAbs(absDirPath) {
 		panic(fmt.Sprintf("Path %s is not absolute", absDirPath))
 	}
@@ -25,16 +26,21 @@ func readMarkdownFilesInPath(absDirPath string, tags []string) []*Command {
 			continue
 		}
 		if file.IsDir() && !strings.HasPrefix(file.Name(), ".") {
-			commands := readMarkdownFilesInPath(path.Join(absDirPath, file.Name()), append(tags, file.Name()))
+			commands, tags := readMarkdownFilesInPath(path.Join(absDirPath, file.Name()), append(tagsStack, file.Name()), uniqueTags)
 			allCommands = append(allCommands, commands...)
+			uniqueTags = tags
 		}
 		if strings.HasSuffix(file.Name(), ".md") {
-			commands := parseMarkdown(path.Join(absDirPath, file.Name()), append(tags, strings.TrimSuffix(file.Name(), ".md")))
+			// COMMAND EXECUTIVE IS USED AS TAG INSTEAD OF FILE NAME
+			commands := parseMarkdown(path.Join(absDirPath, file.Name()), tagsStack)
+			for _, command := range commands {
+				uniqueTags = addTagsIfNotExists(append(tagsStack, command.Executive), uniqueTags)
+			}
 			allCommands = append(allCommands, commands...)
 		}
 	}
 
-	return allCommands
+	return allCommands, uniqueTags
 }
 
 func parseMarkdown(absPath string, tags []string) []*Command {
@@ -94,6 +100,8 @@ func parseCommandHeading(node *blackfriday.Node) (*Command, *blackfriday.Node) {
 	}
 	command.CommandText = getTextFromNode(node)
 
+	setExecutiveFromCommandText(&command)
+
 	// Command description is optional text after code
 	if node.Next != nil {
 		if node.Next.Type == blackfriday.Paragraph {
@@ -104,6 +112,26 @@ func parseCommandHeading(node *blackfriday.Node) (*Command, *blackfriday.Node) {
 
 	return &command, node
 
+}
+
+// Reads command text and get command executive. Skips sudo
+func setExecutiveFromCommandText(command *Command) {
+	for _, field := range strings.Fields(command.CommandText) {
+		if field != "sudo" {
+			command.Executive = field
+			return
+		}
+	}
+
+}
+
+func addTagsIfNotExists(commandTags []string, uniqueTags [][]string) [][]string {
+	for _, tags := range uniqueTags {
+		if reflect.DeepEqual(commandTags, tags) {
+			return uniqueTags
+		}
+	}
+	return append(uniqueTags, commandTags)
 }
 
 func getTextFromNode(node *blackfriday.Node) string {

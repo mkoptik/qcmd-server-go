@@ -11,8 +11,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	searchString := r.URL.Query().Get("search")
 
 	termsQuery := bleve.NewDisjunctionQuery()
-
-	tokens := bleveIndex.Mapping().AnalyzerNamed("standard").Analyze([]byte(searchString))
+	tokens := commandsIndex.Mapping().AnalyzerNamed("standard").Analyze([]byte(searchString))
 	for _, token := range tokens {
 		tokenTerm := string(token.Term)
 		fieldsQuery := bleve.NewDisjunctionQuery()
@@ -30,11 +29,17 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		termsQuery.AddQuery(fieldsQuery)
 	}
 
-	request := bleve.NewSearchRequest(termsQuery)
+	request := &bleve.SearchRequest{}
+	if len(tokens) > 0 {
+		request = bleve.NewSearchRequest(termsQuery)
+	} else {
+		request = bleve.NewSearchRequest(bleve.NewMatchAllQuery())
+	}
+
 	request.Fields = []string { "label", "commandText", "description", "tags" }
 	request.Size = 500
 
-	searchResult, err := bleveIndex.Search(request)
+	searchResult, err := commandsIndex.Search(request)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,25 +56,48 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 			foundCommands[i].Description = hit.Fields["description"].(string)
 		}
 
-		// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
-		tagsString, ok := hit.Fields["tags"].(string)
-		if ok {
-			foundCommands[i].Tags = []string {tagsString}
-		} else {
-			tags := make([]string, len(hit.Fields["tags"].([]interface{})))
-			for i2, tagObj := range hit.Fields["tags"].([]interface{}) {
-				tags[i2] = tagObj.(string)
-			}
-			foundCommands[i].Tags = tags
-		}
+
 	}
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(foundCommands)
 }
 
+func tagsHandler(w http.ResponseWriter, r *http.Request) {
+	matchAllQuery := bleve.NewMatchAllQuery()
+	searchRequest := bleve.NewSearchRequest(matchAllQuery)
+
+	searchRequest.Fields = []string { "path" }
+	searchRequest.Size = 1000
+
+	searchResults, err := tagsIndex.Search(searchRequest)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	foundTags := make([][]string, searchResults.Hits.Len())
+	for i, hit := range searchResults.Hits {
+		// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
+		pathString, ok := hit.Fields["path"].(string)
+		if ok {
+			foundTags[i] = []string {pathString}
+		} else {
+			tags := make([]string, len(hit.Fields["path"].([]interface{})))
+			for i2, tagObj := range hit.Fields["path"].([]interface{}) {
+				tags[i2] = tagObj.(string)
+			}
+			foundTags[i] = tags
+		}
+
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.Encode(foundTags)
+}
+
 func StartHttpServer() {
 	http.HandleFunc("/search", searchHandler)
+	http.HandleFunc("/tags", tagsHandler)
 	log.Printf("Starting http server on port 8888")
 	log.Fatal(http.ListenAndServe(":8888", nil))
 }
