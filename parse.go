@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 	"path"
-	"fmt"
-	"gopkg.in/russross/blackfriday.v2"
 	"reflect"
+	"strings"
+
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 func readMarkdownFilesInPath(absDirPath string, tagsStack []string, uniqueTags [][]string) ([]*Command, [][]string) {
@@ -72,6 +73,7 @@ func parseDocumentHeading(node *blackfriday.Node, tags []string) []*Command {
 				command, commandLastNode := parseCommandHeading(currentNode)
 				currentNode = commandLastNode
 				command.Tags = append(command.Tags, tags...)
+				command.Tags = append(command.Tags, command.Executable)
 				commands = append(commands, command)
 				if groupName != "" {
 					command.Tags = append(command.Tags, groupName)

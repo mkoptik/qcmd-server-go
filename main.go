@@ -1,20 +1,21 @@
 package main
 
 import (
-	"github.com/blevesearch/bleve"
-	"path/filepath"
 	"log"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
+
+	"github.com/blevesearch/bleve"
 )
 
-type Config struct {
-
+type config struct {
 }
 
+// Command TODO: finish comment
 type Command struct {
-	Id          string   `json:"id"`
+	ID          string   `json:"id"`
 	Label       string   `json:"label"`
 	Description string   `json:"description"`
 	CommandText string   `json:"commandText"`
@@ -22,12 +23,13 @@ type Command struct {
 	Tags        []string `json:"tags"`
 }
 
+// Tag TODO: finish comment
 type Tag struct {
 	Path []string `json:"path"`
 }
 
-var commandsIndex bleve.Index = nil
-var tagsIndex bleve.Index = nil
+var commandsIndex bleve.Index
+var tagsIndex bleve.Index
 
 func main() {
 
@@ -51,7 +53,7 @@ func main() {
 	indexTags(tagsIndexPath, tags)
 	defer tagsIndex.Close()
 
-	StartHttpServer()
+	startHTTPServer()
 
 	log.Printf("Closing bleve index")
 
@@ -72,7 +74,6 @@ func indexCommands(indexPath string, commands []*Command) {
 	documentMapping := bleve.NewDocumentMapping()
 	documentMapping.AddFieldMappingsAt("label", enTextFieldMapping)
 	documentMapping.AddFieldMappingsAt("description", enTextFieldMapping)
-	documentMapping.AddFieldMappingsAt("tags", enTextFieldMapping)
 
 	indexMapping := bleve.NewIndexMapping()
 	indexMapping.AddDocumentMapping("command", documentMapping)

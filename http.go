@@ -1,18 +1,61 @@
 package main
 
 import (
-	"net/http"
+	"encoding/json"
 	"log"
+	"net/http"
+
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
-	"encoding/json"
+	"github.com/blevesearch/bleve/search/query"
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
+
+	commandsQuery := buildCommandQuery(r)
+	tagsQuery := buildTagsQuery(r)
+
+	request := &bleve.SearchRequest{}
+	rootQuery := bleve.NewConjunctionQuery(commandsQuery, tagsQuery)
+	request = bleve.NewSearchRequest(rootQuery)
+
+	request.Fields = []string{"label", "commandText", "description", "executable", "tags"}
+	request.Size = 500
+
+	searchResult, err := commandsIndex.Search(request)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Found %d commands in %s", searchResult.Hits.Len(), searchResult.Took)
+
+	foundCommands := make([]Command, searchResult.Hits.Len())
+	for i, hit := range searchResult.Hits {
+		foundCommands[i] = Command{
+			Label:       hit.Fields["label"].(string),
+			CommandText: hit.Fields["commandText"].(string),
+			Executable:  hit.Fields["executable"].(string),
+			Tags:        extractStringsArray(hit, "tags"),
+		}
+		if hit.Fields["description"] != nil {
+			foundCommands[i].Description = hit.Fields["description"].(string)
+		}
+	}
+
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	encoder := json.NewEncoder(w)
+	encoder.Encode(foundCommands)
+}
+
+func buildCommandQuery(r *http.Request) query.Query {
 	searchString := r.URL.Query().Get("search")
 
 	termsQuery := bleve.NewDisjunctionQuery()
 	tokens := commandsIndex.Mapping().AnalyzerNamed("standard").Analyze([]byte(searchString))
+	if len(tokens) == 0 {
+		return bleve.NewMatchAllQuery()
+	}
+
 	for _, token := range tokens {
 		tokenTerm := string(token.Term)
 		fieldsQuery := bleve.NewDisjunctionQuery()
@@ -35,44 +78,24 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		termsQuery.AddQuery(fieldsQuery)
 	}
 
-	request := &bleve.SearchRequest{}
-	if len(tokens) > 0 {
-		request = bleve.NewSearchRequest(termsQuery)
-	} else {
-		request = bleve.NewSearchRequest(bleve.NewMatchAllQuery())
+	return termsQuery
+}
+
+func buildTagsQuery(r *http.Request) query.Query {
+	searchTagsString := r.URL.Query().Get("tag")
+	if len(searchTagsString) > 0 {
+		query := bleve.NewMatchQuery(searchTagsString)
+		query.SetField("tags")
+		return query
 	}
-
-	request.Fields = []string { "label", "commandText", "description", "tags" }
-	request.Size = 500
-
-	searchResult, err := commandsIndex.Search(request)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("Found %d commands in %s", searchResult.Hits.Len(), searchResult.Took)
-
-	foundCommands := make([]Command, searchResult.Hits.Len())
-	for i, hit := range searchResult.Hits {
-		foundCommands[i] = Command{
-			Label: hit.Fields["label"].(string),
-			CommandText: hit.Fields["commandText"].(string),
-		}
-		if hit.Fields["description"] != nil {
-			foundCommands[i].Description = hit.Fields["description"].(string)
-		}
-	}
-
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	encoder := json.NewEncoder(w)
-	encoder.Encode(foundCommands)
+	return bleve.NewMatchAllQuery()
 }
 
 func tagsHandler(w http.ResponseWriter, r *http.Request) {
 	matchAllQuery := bleve.NewMatchAllQuery()
 	searchRequest := bleve.NewSearchRequest(matchAllQuery)
 
-	searchRequest.Fields = []string { "path" }
+	searchRequest.Fields = []string{"path"}
 	searchRequest.Size = 1000
 
 	searchResults, err := tagsIndex.Search(searchRequest)
@@ -82,28 +105,30 @@ func tagsHandler(w http.ResponseWriter, r *http.Request) {
 
 	foundTags := make([][]string, searchResults.Hits.Len())
 	for i, hit := range searchResults.Hits {
-		foundTags[i] = extractStringArray(hit, "path")
+		foundTags[i] = extractStringsArray(hit, "path")
 	}
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(foundTags)
 }
 
-func extractStringArray(hit *search.DocumentMatch, field string) []string {
-	// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
-	pathString, ok := hit.Fields[field].(string)
-	if ok {
-		return []string {pathString}
-	} else {
-		tags := make([]string, len(hit.Fields["path"].([]interface{})))
-		for i2, tagObj := range hit.Fields["path"].([]interface{}) {
-			tags[i2] = tagObj.(string)
-		}
-		return tags
+// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
+func extractStringsArray(hit *search.DocumentMatch, fieldName string) []string {
+	if hit.Fields[fieldName] == nil {
+		return nil
 	}
+	singleString, ok := hit.Fields[fieldName].(string)
+	if ok {
+		return []string{singleString}
+	}
+	tags := make([]string, len(hit.Fields[fieldName].([]interface{})))
+	for i2, tagObj := range hit.Fields[fieldName].([]interface{}) {
+		tags[i2] = tagObj.(string)
+	}
+	return tags
 }
 
-func StartHttpServer() {
+func startHTTPServer() {
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/tags", tagsHandler)
 	log.Printf("Starting http server on port 8888")
