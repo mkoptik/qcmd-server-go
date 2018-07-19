@@ -31,10 +31,10 @@ func readMarkdownFilesInPath(absDirPath string, tagsStack []string, uniqueTags [
 			uniqueTags = tags
 		}
 		if strings.HasSuffix(file.Name(), ".md") {
-			// COMMAND EXECUTIVE IS USED AS TAG INSTEAD OF FILE NAME
+			// COMMAND EXECUTABLE IS USED AS TAG INSTEAD OF FILE NAME
 			commands := parseMarkdown(path.Join(absDirPath, file.Name()), tagsStack)
 			for _, command := range commands {
-				uniqueTags = addTagsIfNotExists(append(tagsStack, command.Executive), uniqueTags)
+				uniqueTags = addTagsIfNotExists(append(tagsStack, command.Executable), uniqueTags)
 			}
 			allCommands = append(allCommands, commands...)
 		}
@@ -100,7 +100,7 @@ func parseCommandHeading(node *blackfriday.Node) (*Command, *blackfriday.Node) {
 	}
 	command.CommandText = getTextFromNode(node)
 
-	setExecutiveFromCommandText(&command)
+	setExecutableFromCommandText(&command)
 
 	// Command description is optional text after code
 	if node.Next != nil {
@@ -115,10 +115,10 @@ func parseCommandHeading(node *blackfriday.Node) (*Command, *blackfriday.Node) {
 }
 
 // Reads command text and get command executive. Skips sudo
-func setExecutiveFromCommandText(command *Command) {
+func setExecutableFromCommandText(command *Command) {
 	for _, field := range strings.Fields(command.CommandText) {
 		if field != "sudo" {
-			command.Executive = field
+			command.Executable = field
 			return
 		}
 	}

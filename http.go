@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"log"
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/search"
 	"encoding/json"
 )
 
@@ -24,6 +25,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		prefixQuery = bleve.NewPrefixQuery(tokenTerm)
 		prefixQuery.SetField("description")
 		prefixQuery.SetBoost(2)
+		fieldsQuery.AddQuery(prefixQuery)
+
+		prefixQuery = bleve.NewPrefixQuery(tokenTerm)
+		prefixQuery.SetField("executable")
+		prefixQuery.SetBoost(8)
 		fieldsQuery.AddQuery(prefixQuery)
 
 		termsQuery.AddQuery(fieldsQuery)
@@ -55,10 +61,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		if hit.Fields["description"] != nil {
 			foundCommands[i].Description = hit.Fields["description"].(string)
 		}
-
-
 	}
 
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	encoder := json.NewEncoder(w)
 	encoder.Encode(foundCommands)
 }
@@ -77,22 +82,25 @@ func tagsHandler(w http.ResponseWriter, r *http.Request) {
 
 	foundTags := make([][]string, searchResults.Hits.Len())
 	for i, hit := range searchResults.Hits {
-		// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
-		pathString, ok := hit.Fields["path"].(string)
-		if ok {
-			foundTags[i] = []string {pathString}
-		} else {
-			tags := make([]string, len(hit.Fields["path"].([]interface{})))
-			for i2, tagObj := range hit.Fields["path"].([]interface{}) {
-				tags[i2] = tagObj.(string)
-			}
-			foundTags[i] = tags
-		}
-
+		foundTags[i] = extractStringArray(hit, "path")
 	}
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(foundTags)
+}
+
+func extractStringArray(hit *search.DocumentMatch, field string) []string {
+	// SINGLE VALUE IS NOT STORED AS ARRAY IN BLEVE SEARCH
+	pathString, ok := hit.Fields[field].(string)
+	if ok {
+		return []string {pathString}
+	} else {
+		tags := make([]string, len(hit.Fields["path"].([]interface{})))
+		for i2, tagObj := range hit.Fields["path"].([]interface{}) {
+			tags[i2] = tagObj.(string)
+		}
+		return tags
+	}
 }
 
 func StartHttpServer() {

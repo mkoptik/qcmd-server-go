@@ -14,12 +14,12 @@ type Config struct {
 }
 
 type Command struct {
-	Id string `json:"id"`
-	Label string `json:"label"`
-	Description string `json:"description"`
-	CommandText string `json:"commandText"`
-	Executive string `json:"executive"`
-	Tags []string `json:"tags"`
+	Id          string   `json:"id"`
+	Label       string   `json:"label"`
+	Description string   `json:"description"`
+	CommandText string   `json:"commandText"`
+	Executable  string   `json:"executable"`
+	Tags        []string `json:"tags"`
 }
 
 type Tag struct {
