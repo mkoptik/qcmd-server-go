@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
@@ -129,8 +131,12 @@ func extractStringsArray(hit *search.DocumentMatch, fieldName string) []string {
 }
 
 func startHTTPServer() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8888"
+	}
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/tags", tagsHandler)
-	log.Printf("Starting http server on port 8888")
-	log.Fatal(http.ListenAndServe(":8888", nil))
+	log.Printf("Starting http server on port %s", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
