@@ -18,3 +18,5 @@ vendor
 .idea
 
 data
+qcmd-server-go
+debug
