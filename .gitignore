@@ -20,3 +20,4 @@ vendor/*/
 data
 qcmd-server-go
 debug
+node_modules
