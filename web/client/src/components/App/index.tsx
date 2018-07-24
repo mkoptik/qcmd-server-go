@@ -14,7 +14,7 @@ interface AppProps extends RouteComponentProps<any> {
 
 interface AppState {
     search: string,
-    foundCommands: Command[]
+    foundCommands: Command[],
 }
 
 export class App extends React.Component<AppProps, AppState> {

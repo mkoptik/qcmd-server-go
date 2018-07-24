@@ -21,3 +21,4 @@ data
 qcmd-server-go
 debug
 node_modules
+web/client/dist
