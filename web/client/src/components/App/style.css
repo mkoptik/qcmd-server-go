@@ -1,0 +1,49 @@
+body {
+    background-color: #101010;
+    padding: 15px;
+}
+
+.inputs-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.tag-input {
+    flex-shrink: 0;
+    flex-grow: 1;
+    flex-basis: 20%;
+    min-width: 150px;
+}
+
+.search-input {
+    flex-grow: 1;
+    flex-shrink: 0;
+    flex-basis: 80%;
+}
+
+.search-input input {
+    width: 100%;
+    padding: 15px;
+    box-shadow: 0 0 19px 0 #00000045;
+    border: 0;
+    outline: none;
+    background-color: #3c3c3c;
+    color: #FFF;
+}
+
+.commands-list {
+    padding: 0;
+    color: #fff;
+    margin-top: 10px;
+    box-shadow: 0 0 19px 0 #00000045;
+}
+
+.commands-list .command {
+    padding: 8px 15px;
+}
+
+.commands-list .command .command-text {
+    font-size: 11px;
+    color: #c5c5c5;
+}
+
