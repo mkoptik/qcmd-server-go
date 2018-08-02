@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jasonlvhit/gocron"
 )
 
 type config struct {
@@ -28,10 +29,27 @@ type Tag struct {
 	Path []string `json:"path"`
 }
 
-var commandsIndex bleve.Index
-var tagsIndex bleve.Index
+var commandsIndex bleve.IndexAlias
+var commandsIndexLastAdded bleve.Index
+
+var tagsIndex bleve.IndexAlias
+var tagsIndexLastAdded bleve.Index
 
 func main() {
+
+	fetchFromGitAndReindexCommandsIfNeeded()
+	gocron.Every(5).Minutes().Do(fetchFromGitAndReindexCommandsIfNeeded)
+	gocron.Start()
+
+	defer commandsIndex.Close()
+	defer tagsIndex.Close()
+
+	startHTTPServer()
+
+	log.Printf("Quiting, bye...")
+}
+
+func fetchFromGitAndReindexCommandsIfNeeded() {
 
 	currentUser, _ := user.Current()
 
@@ -39,7 +57,11 @@ func main() {
 	commandsIndexPath := filepath.Join(currentUser.HomeDir, ".qcmd/commands.index.bleve")
 	tagsIndexPath := filepath.Join(currentUser.HomeDir, ".qcmd/tags.index.bleve")
 
-	updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
+	changed := updateGitRepository("https://github.com/mkoptik/qcmd-commands", mdFilesPath)
+	if !changed {
+		return
+	}
+
 	absPath, err := filepath.Abs(mdFilesPath)
 	if err != nil {
 		log.Fatal(err)
@@ -48,15 +70,7 @@ func main() {
 	commands, tags := readMarkdownFilesInPath(absPath, []string{}, [][]string{})
 
 	indexCommands(commandsIndexPath, commands)
-	defer commandsIndex.Close()
-
 	indexTags(tagsIndexPath, tags)
-	defer tagsIndex.Close()
-
-	startHTTPServer()
-
-	log.Printf("Closing bleve index")
-
 }
 
 func indexCommands(indexPath string, commands []*Command) {
@@ -88,8 +102,12 @@ func indexCommands(indexPath string, commands []*Command) {
 		index.Index(strconv.Itoa(i), command)
 	}
 
-	commandsIndex = index
-
+	if commandsIndex == nil {
+		commandsIndex = bleve.NewIndexAlias(index)
+	} else {
+		commandsIndex.Swap([]bleve.Index{index}, []bleve.Index{commandsIndexLastAdded})
+	}
+	commandsIndexLastAdded = index
 }
 
 func indexTags(indexPath string, uniqueTags [][]string) {
@@ -116,5 +134,10 @@ func indexTags(indexPath string, uniqueTags [][]string) {
 		index.Index(strconv.Itoa(i), tagObj)
 	}
 
-	tagsIndex = index
+	if tagsIndex == nil {
+		tagsIndex = bleve.NewIndexAlias(index)
+	} else {
+		tagsIndex.Swap([]bleve.Index{index}, []bleve.Index{tagsIndexLastAdded})
+	}
+	tagsIndexLastAdded = index
 }

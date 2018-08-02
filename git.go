@@ -8,9 +8,11 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
+var lastCommit string
+
 // Checks if destination directory exists. If yes, it pulls repository
 // from origin and if directory does not exist, it will be cloned.
-func updateGitRepository(repositoryURL string, cloneDirectory string) {
+func updateGitRepository(repositoryURL string, cloneDirectory string) bool {
 
 	path, err := filepath.Abs(cloneDirectory)
 	if err != nil {
@@ -40,8 +42,6 @@ func updateGitRepository(repositoryURL string, cloneDirectory string) {
 			log.Fatal(err)
 		}
 
-		log.Printf("Git pull from origin")
-
 		pullOptions := &git.PullOptions{
 			Progress:   os.Stdout,
 			RemoteName: "origin",
@@ -50,7 +50,36 @@ func updateGitRepository(repositoryURL string, cloneDirectory string) {
 		if err := workTree.Pull(pullOptions); err != nil && err != git.NoErrAlreadyUpToDate {
 			log.Fatal(err)
 		}
-
 	}
 
+	commit := getLastCommitHash(path)
+	changeDetected := commit != lastCommit
+
+	// lastCommit is empty string on first run
+	if lastCommit != "" && changeDetected {
+		log.Printf("Git change detected. Old commit %s, new commit %s", lastCommit, commit)
+	}
+
+	lastCommit = commit
+	return changeDetected
+}
+
+func getLastCommitHash(repoPath string) string {
+
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	commit, err := repo.CommitObject(head.Hash())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return commit.Hash.String()
 }
