@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start-dev": "webpack-dev-server --config=web/client/configs/webpack/dev.js",
-    "build": "webpack -p --config=web/client/configs/webpack/prod.js"
+    "heroku-postbuild": "webpack -p --config=web/client/configs/webpack/prod.js"
   },
   "license": "MIT",
   "devDependencies": {
