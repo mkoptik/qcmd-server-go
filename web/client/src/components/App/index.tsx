@@ -28,9 +28,13 @@ export class App extends React.Component<AppProps, AppState> {
         };
     }
 
+    componentDidMount() {
+        Axios.get<Command[]>(`${this.props.apiUrl}/search`)
+            .then(response => { this.setState({ foundCommands: response.data }) })
+    }
+
     componentWillReceiveProps(newProps: AppProps) {
-        const bla = qs.parse(newProps.location.search);
-        console.log(bla)
+
     }
 
     inputTextChanged = (value) => {

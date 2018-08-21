@@ -22,6 +22,10 @@ export class TagsAutosuggest extends React.Component<TagsAutosuggestProps, TagsA
         };
     }
 
+    componentDidMount() {
+        // TODO: FETCH ALL TAGS
+    }
+
     render() {
 
         const inputProps: InputProps<string[]> = {

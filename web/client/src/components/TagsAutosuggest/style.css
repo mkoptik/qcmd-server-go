@@ -30,6 +30,7 @@
     background-color: #484848;
     color: #fff;
     width: 100%;
+    box-sizing: border-box;
     border-right: 1px solid #545454
 }
 

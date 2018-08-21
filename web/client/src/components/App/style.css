@@ -1,6 +1,7 @@
 body {
     background-color: #101010;
     padding: 15px;
+    font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
 }
 
 .inputs-wrap {
@@ -23,6 +24,7 @@ body {
 
 .search-input input {
     width: 100%;
+    box-sizing: border-box;
     padding: 15px;
     box-shadow: 0 0 19px 0 #00000045;
     border: 0;

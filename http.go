@@ -135,6 +135,10 @@ func startHTTPServer() {
 	if port == "" {
 		port = "8888"
 	}
+
+	fs := http.FileServer(http.Dir("./web/client/dist"))
+
+	http.Handle("/", http.StripPrefix("/", fs))
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/tags", tagsHandler)
 	log.Printf("Starting http server on port %s", port)

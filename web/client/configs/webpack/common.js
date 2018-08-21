@@ -1,6 +1,7 @@
 // shared config (dev and prod)
 const {resolve} = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
     resolve: {
@@ -8,8 +9,6 @@ module.exports = {
     },
     output: {
         filename: 'client.js',
-        libraryTarget: 'var',
-        library: 'QcmdClientEntryPoint'
     },
     context: resolve(__dirname, '../../src'),
     module: {
@@ -39,5 +38,8 @@ module.exports = {
     },
     plugins: [
         new ExtractTextPlugin("client.min.css", { allChunks: true }),
+        new HtmlWebpackPlugin({
+            template: resolve(__dirname, '../../src/index.html')
+        })
     ]
 };
