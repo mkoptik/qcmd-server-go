@@ -1,19 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
-	"log"
-	"net/http"
-	"os"
-
+	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
+	"log"
+	"net/http"
+	"os"
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-
 	commandsQuery := buildCommandQuery(r)
 	tagsQuery := buildTagsQuery(r)
 
@@ -110,6 +108,7 @@ func tagsHandler(w http.ResponseWriter, r *http.Request) {
 		foundTags[i] = extractStringsArray(hit, "path")
 	}
 
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	encoder := json.NewEncoder(w)
 	encoder.Encode(foundTags)
 }
@@ -136,9 +135,12 @@ func startHTTPServer() {
 		port = "8888"
 	}
 
-	fs := http.FileServer(http.Dir("./web/client/dist"))
+	fsJs := http.FileServer(http.Dir("./web/client/dist"))
+	fsAssets := http.FileServer(http.Dir("./web/assets"))
 
-	http.Handle("/", http.StripPrefix("/", fs))
+	http.Handle("/", http.StripPrefix("/", fsJs))
+	http.Handle("/assets", http.StripPrefix("/", fsAssets))
+
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/tags", tagsHandler)
 	log.Printf("Starting http server on port %s", port)

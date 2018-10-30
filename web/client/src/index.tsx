@@ -6,7 +6,7 @@ import {BrowserRouter} from "react-router-dom";
 
 ReactDOM.render(
     <BrowserRouter>
-        <Route path="/" render={p => <App initialCommands={[]} allTags={[]} apiUrl={"http://www.qcmd.io/"} {...p} />} />
+        <Route path="/" render={p => <App initialCommands={[]} allTags={[]} apiUrl={"http://localhost:8888"} {...p} />} />
     </BrowserRouter>
     ,
     document.getElementById("root")

@@ -1,7 +1,7 @@
 // shared config (dev and prod)
 const {resolve} = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     resolve: {
@@ -39,7 +39,8 @@ module.exports = {
     plugins: [
         new ExtractTextPlugin("client.min.css", { allChunks: true }),
         new HtmlWebpackPlugin({
-            template: resolve(__dirname, '../../src/index.html')
+            template: resolve(__dirname, '../../src/index.html'),
+            favicon: resolve(__dirname, '../../../assets/favicon.ico')
         })
     ]
 };
